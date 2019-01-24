@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--show-process', type=bool, default=False,
                         help='for debug purpose, if enabled, speed for inference is dropped.')
     parser.add_argument('--showBG', type=bool, default=True, help='False to show skeleton only.')
+    parser.add_argument('--output_json', type=str, default='/tmp/', help='writing output json dir')
     args = parser.parse_args()
 
     logger.debug('initialization %s : %s' % (args.model, get_graph_path(args.model)))
@@ -36,14 +37,16 @@ if __name__ == '__main__':
 
     if cap.isOpened() is False:
         print("Error opening video stream or file")
+
+    frame = 0
     while cap.isOpened():
         ret_val, image = cap.read()
 
         humans = e.inference(image)
         if not args.showBG:
             image = np.zeros(image.shape)
-        image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False)
-
+        image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False, frame=frame, output_json_dir=args.output_json)
+        frame += 1
         cv2.putText(image, "FPS: %f" % (1.0 / (time.time() - fps_time)), (10, 10),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         cv2.imshow('tf-pose-estimation result', image)
         fps_time = time.time()
