@@ -29,7 +29,7 @@ if __name__ == '__main__':
                              'default=0x0, Recommends : 432x368 or 656x368 or 1312x736 ')
     parser.add_argument('--resize-out-ratio', type=float, default=4.0,
                         help='if provided, resize heatmaps before they are post-processed. default=1.0')
-
+    parser.add_argument('--output_json', type=str, default='/tmp/', help='writing output json dir')
     args = parser.parse_args()
 
     w, h = model_wh(args.resize)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     logger.info('inference image: %s in %.4f seconds.' % (args.image, elapsed))
 
-    image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False)
+    image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False, frame=0, output_json_dir=args.output_json)
 
     try:
         import matplotlib.pyplot as plt

@@ -7,7 +7,8 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import time
-
+import json
+import os
 from tf_pose import common
 from tf_pose.common import CocoPart
 from tf_pose.tensblur.smoother import Smoother
@@ -306,6 +307,7 @@ class TfPoseEstimator:
     def __init__(self, graph_path, target_size=(320, 240), tf_config=None, trt_bool=False):
         self.target_size = target_size
 
+
         # load graph
         logger.info('loading graph from %s(default size=%dx%d)' % (graph_path, target_size[0], target_size[1]))
         with tf.gfile.GFile(graph_path, 'rb') as f:
@@ -405,12 +407,14 @@ class TfPoseEstimator:
         return npimg_q
 
     @staticmethod
-    def draw_humans(npimg, humans, imgcopy=False):
+    def draw_humans(npimg, humans, imgcopy=False, frame=0, output_json_dir=None):
         if imgcopy:
             npimg = np.copy(npimg)
         image_h, image_w = npimg.shape[:2]
+        dc = {"people":[]}
         centers = {}
-        for human in humans:
+        for n, human in enumerate(humans):
+            flat = [0.0 for i in range(36)]
             # draw point
             for i in range(common.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
@@ -419,7 +423,11 @@ class TfPoseEstimator:
                 body_part = human.body_parts[i]
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 centers[i] = center
-                cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
+                #add x
+                flat[i*2] = center[0]
+                #add y
+                flat[i*2+1] = center[1]
+                cv2.circle(npimg, center, 8, common.CocoColors[i], thickness=3, lineType=8, shift=0)
 
             # draw line
             for pair_order, pair in enumerate(common.CocoPairsRender):
@@ -428,6 +436,13 @@ class TfPoseEstimator:
 
                 # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
                 cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
+
+            dc["people"].append({"pose_keypoints_2d" : flat})
+
+        if output_json_dir:
+            with open(os.path.join(output_json_dir, '{0}_keypoints.json'.format(str(frame).zfill(12))), 'w') as outfile:
+                json.dump(dc, outfile)
+
 
         return npimg
 
