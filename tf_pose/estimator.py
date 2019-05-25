@@ -411,10 +411,12 @@ class TfPoseEstimator:
         if imgcopy:
             npimg = np.copy(npimg)
         image_h, image_w = npimg.shape[:2]
-        dc = {"people":[]}
+        dc = {"version":1.2, "people":[], "face_keypoints_2d":[], "hand_left_keypoints_2d":[],
+              "hand_right_keypoints_2d":[], "pose_keypoints_3d":[], "face_keypoints_3d":[],
+              "hand_left_keypoints_3d":[], "hand_right_keypoints_3d":[]}
         centers = {}
         for n, human in enumerate(humans):
-            flat = [0.0 for i in range(36)]
+            flat = [0.0 for i in range(54)]
             # draw point
             for i in range(common.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
@@ -424,9 +426,11 @@ class TfPoseEstimator:
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 centers[i] = center
                 #add x
-                flat[i*2] = center[0]
+                flat[i*3] = center[0]
                 #add y
-                flat[i*2+1] = center[1]
+                flat[i*3+1] = center[1]
+                #add score
+                flat[i*3+2] = body_part.score
                 cv2.circle(npimg, center, 8, common.CocoColors[i], thickness=3, lineType=8, shift=0)
 
             # draw line
