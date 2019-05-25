@@ -24,10 +24,13 @@ if __name__ == '__main__':
     parser.add_argument('--video', type=str, default='')
     parser.add_argument('--resolution', type=str, default='432x368', help='network input resolution. default=432x368')
     parser.add_argument('--model', type=str, default='mobilenet_thin', help='cmu / mobilenet_thin / mobilenet_v2_large / mobilenet_v2_small')
-    parser.add_argument('--show-process', type=bool, default=False,
+    parser.add_argument('--show-process', action='store_true',
                         help='for debug purpose, if enabled, speed for inference is dropped.')
-    parser.add_argument('--showBG', type=bool, default=True, help='False to show skeleton only.')
+    parser.add_argument('--no_bg', action='store_true', help='show skeleton only.')
     parser.add_argument('--output_json', type=str, default='/tmp/', help='writing output json dir')
+    parser.add_argument('--no_display', action='store_true', help='disable showing image')
+    parser.add_argument('--resize_out_ratio', type=float, default=4.0,
+                        help='if provided, resize heatmaps before they are post-processed')
     args = parser.parse_args()
 
     logger.debug('initialization %s : %s' % (args.model, get_graph_path(args.model)))
@@ -41,14 +44,17 @@ if __name__ == '__main__':
     frame = 0
     while cap.isOpened():
         ret_val, image = cap.read()
-
-        humans = e.inference(image)
-        if not args.showBG:
+        if not ret_val:
+            break
+        
+        humans = e.inference(image, resize_to_default=(w > 0 and h > 0), upsample_size=args.resize_out_ratio)
+        if args.no_bg:
             image = np.zeros(image.shape)
         image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False, frame=frame, output_json_dir=args.output_json)
         frame += 1
         cv2.putText(image, "FPS: %f" % (1.0 / (time.time() - fps_time)), (10, 10),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        cv2.imshow('tf-pose-estimation result', image)
+        if not args.no_display:
+            cv2.imshow('tf-pose-estimation result', image)
         fps_time = time.time()
         if cv2.waitKey(1) == 27:
             break
