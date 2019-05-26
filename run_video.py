@@ -4,6 +4,7 @@ import time
 
 import cv2
 import numpy as np
+import os
 
 from tf_pose.estimator import TfPoseEstimator
 from tf_pose.networks import get_graph_path, model_wh
@@ -31,6 +32,9 @@ if __name__ == '__main__':
     parser.add_argument('--no_display', action='store_true', help='disable showing image')
     parser.add_argument('--resize_out_ratio', type=float, default=4.0,
                         help='if provided, resize heatmaps before they are post-processed')
+    parser.add_argument('--number_people_max', type=int, default=1, help='maximum number of people')
+    parser.add_argument('--frame_first', type=int, default=0, help='maximum number of people')
+    parser.add_argument('--write_video', type=str, default=None, help='output video file')
     args = parser.parse_args()
 
     logger.debug('initialization %s : %s' % (args.model, get_graph_path(args.model)))
@@ -41,13 +45,24 @@ if __name__ == '__main__':
     if cap.isOpened() is False:
         print("Error opening video stream or file")
 
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    if args.write_video is not None:
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(args.write_video, fourcc, 30.0, (width, height))
+    
     frame = 0
     while cap.isOpened():
         ret_val, image = cap.read()
         if not ret_val:
             break
+        if frame < args.frame_first:
+            frame += 1
+            continue
         
         humans = e.inference(image, resize_to_default=(w > 0 and h > 0), upsample_size=args.resize_out_ratio)
+        del humans[args.number_people_max:]
         if args.no_bg:
             image = np.zeros(image.shape)
         image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False, frame=frame, output_json_dir=args.output_json)
@@ -55,9 +70,14 @@ if __name__ == '__main__':
         cv2.putText(image, "FPS: %f" % (1.0 / (time.time() - fps_time)), (10, 10),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         if not args.no_display:
             cv2.imshow('tf-pose-estimation result', image)
+        if args.write_video is not None:
+            out.write(image)
         fps_time = time.time()
         if cv2.waitKey(1) == 27:
             break
+
+    if args.write_video is not None:
+        out.release()
 
     cv2.destroyAllWindows()
 logger.debug('finished+')
