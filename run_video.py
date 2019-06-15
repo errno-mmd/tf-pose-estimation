@@ -5,6 +5,7 @@ import time
 import cv2
 import numpy as np
 import os
+import sys
 
 from tf_pose.estimator import TfPoseEstimator
 from tf_pose.networks import get_graph_path, model_wh
@@ -43,7 +44,9 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture(args.video)
 
     if cap.isOpened() is False:
-        print("Error opening video stream or file")
+        logger.error("Error opening input video stream or file: {0}".format(args.video))
+        sys.exit(1)
+
 
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -52,6 +55,7 @@ if __name__ == '__main__':
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         out = cv2.VideoWriter(args.write_video, fourcc, 30.0, (width, height))
     
+    sys.stdout.write("frame: ")
     frame = 0
     while cap.isOpened():
         ret_val, image = cap.read()
@@ -61,6 +65,7 @@ if __name__ == '__main__':
             frame += 1
             continue
         
+        sys.stdout.write('\rframe: {:5}'.format(frame))
         humans = e.inference(image, resize_to_default=(w > 0 and h > 0), upsample_size=args.resize_out_ratio)
         del humans[args.number_people_max:]
         if args.no_bg:
@@ -76,8 +81,14 @@ if __name__ == '__main__':
         if cv2.waitKey(1) == 27:
             break
 
+    sys.stdout.write("\n")
+
     if args.write_video is not None:
         out.release()
+
+    if frame <= args.frame_first:
+        logger.error('No frame is processed: frame_first = {0}, frame = {1}'.format(args.frame_first, frame))
+        sys.exit(1)
 
     cv2.destroyAllWindows()
 logger.debug('finished+')
