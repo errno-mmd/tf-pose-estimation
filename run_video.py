@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--resize_out_ratio', type=float, default=4.0,
                         help='if provided, resize heatmaps before they are post-processed')
     parser.add_argument('--number_people_max', type=int, default=1, help='maximum number of people')
-    parser.add_argument('--frame_first', type=int, default=0, help='maximum number of people')
+    parser.add_argument('--frame_first', type=int, default=0, help='first frame to analyze')
     parser.add_argument('--write_video', type=str, default=None, help='output video file')
     args = parser.parse_args()
 
