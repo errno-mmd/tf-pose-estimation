@@ -20,6 +20,9 @@ logger.addHandler(ch)
 
 fps_time = 0
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='tf-pose-estimation Video')
@@ -36,11 +39,13 @@ if __name__ == '__main__':
     parser.add_argument('--number_people_max', type=int, default=1, help='maximum number of people')
     parser.add_argument('--frame_first', type=int, default=0, help='first frame to analyze')
     parser.add_argument('--write_video', type=str, default=None, help='output video file')
+    parser.add_argument('--tensorrt', type=str, default="False",
+                        help='for tensorrt process.')
     args = parser.parse_args()
 
     logger.debug('initialization %s : %s' % (args.model, get_graph_path(args.model)))
     w, h = model_wh(args.resolution)
-    e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h))
+    e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h), trt_bool=str2bool(args.tensorrt))
     cap = cv2.VideoCapture(args.video)
 
     if cap.isOpened() is False:
