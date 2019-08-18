@@ -12,7 +12,12 @@ import os
 from tf_pose import common
 from tf_pose.common import CocoPart
 from tf_pose.tensblur.smoother import Smoother
-import tensorflow.contrib.tensorrt as trt
+
+_tf_pose_estimator_tensorrt_disabled=False
+try:
+    import tensorflow.contrib.tensorrt as trt
+except ModuleNotFoundError:
+    _tf_pose_estimator_tensorrt_disabled=True
 
 try:
     from tf_pose.pafprocess import pafprocess
@@ -307,6 +312,8 @@ class TfPoseEstimator:
     def __init__(self, graph_path, target_size=(320, 240), tf_config=None, trt_bool=False):
         self.target_size = target_size
 
+        if _tf_pose_estimator_tensorrt_disabled:
+            trt_bool = False
 
         # load graph
         logger.info('loading graph from %s(default size=%dx%d)' % (graph_path, target_size[0], target_size[1]))
