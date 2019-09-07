@@ -62,6 +62,7 @@ if __name__ == '__main__':
     
     sys.stdout.write("frame: ")
     frame = 0
+    detected = False
     while cap.isOpened():
         ret_val, image = cap.read()
         if not ret_val:
@@ -72,6 +73,8 @@ if __name__ == '__main__':
         
         sys.stdout.write('\rframe: {:5}'.format(frame))
         humans = e.inference(image, resize_to_default=(w > 0 and h > 0), upsample_size=args.resize_out_ratio)
+        if len(humans) > 0:
+            detected = True
         del humans[args.number_people_max:]
         if args.no_bg:
             image = np.zeros(image.shape)
@@ -93,6 +96,10 @@ if __name__ == '__main__':
 
     if frame <= args.frame_first:
         logger.error('No frame is processed: frame_first = {0}, frame = {1}'.format(args.frame_first, frame))
+        sys.exit(1)
+
+    if not detected:
+        logger.error('No human is detected in the video: {0}'.format(args.video))
         sys.exit(1)
 
     cv2.destroyAllWindows()
