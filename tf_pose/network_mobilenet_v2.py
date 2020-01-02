@@ -38,7 +38,7 @@ class Mobilenetv2Network(network_base.BaseNetwork):
         ).concat(3, name='feat_concat'))
 
         feature_lv = 'feat_concat'
-        with tf.variable_scope(None, 'Openpose'):
+        with tf.compat.v1.variable_scope(None, 'Openpose'):
             prefix = 'MConv_Stage1'
             (self.feed(feature_lv)
              # .se_block(name=prefix + '_L1_se', ratio=8)
@@ -98,7 +98,7 @@ class Mobilenetv2Network(network_base.BaseNetwork):
         return self.get_output('MConv_Stage6_L1_5'), self.get_output('MConv_Stage6_L2_5')
 
     def restorable_variables(self, only_backbone=True):
-        vs = {v.op.name: v for v in tf.global_variables() if
+        vs = {v.op.name: v for v in tf.compat.v1.global_variables() if
               ('MobilenetV2' in v.op.name or (only_backbone is False and 'Openpose' in v.op.name)) and
               # 'global_step' not in v.op.name and
               # 'beta1_power' not in v.op.name and 'beta2_power' not in v.op.name and

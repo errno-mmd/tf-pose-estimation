@@ -74,7 +74,7 @@ class Smoother(object):
     def make_gauss_var(self, name, size, sigma, c_i):
         # with tf.device("/cpu:0"):
         kernel = self.gauss_kernel(size, sigma, c_i)
-        var = tf.Variable(tf.convert_to_tensor(kernel), name=name)
+        var = tf.Variable(tf.convert_to_tensor(value=kernel), name=name)
         return var
 
     def get_output(self):
@@ -92,8 +92,8 @@ class Smoother(object):
         else:
             c_i = input.get_shape().as_list()[3]
         # Convolution for a given input and kernel
-        convolve = lambda i, k: tf.nn.depthwise_conv2d(i, k, [1, 1, 1, 1], padding=padding)
-        with tf.variable_scope(name) as scope:
+        convolve = lambda i, k: tf.nn.depthwise_conv2d(input=i, filter=k, strides=[1, 1, 1, 1], padding=padding)
+        with tf.compat.v1.variable_scope(name) as scope:
             kernel = self.make_gauss_var('gauss_weight', self.filter_size, self.sigma, c_i)
             output = convolve(input, kernel)
         return output
