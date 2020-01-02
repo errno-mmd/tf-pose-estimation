@@ -77,7 +77,7 @@ if __name__ == '__main__':
             detected = True
         del humans[args.number_people_max:]
         if args.no_bg:
-            image = np.zeros(image.shape)
+            image = np.zeros(image.shape, dtype=np.uint8)
         image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False, frame=frame, output_json_dir=args.write_json)
         frame += 1
         cv2.putText(image, "FPS: %f" % (1.0 / (time.time() - fps_time)), (10, 10),  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
